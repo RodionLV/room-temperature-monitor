@@ -9,11 +9,12 @@
 #include "config.h"
 #include "c_i2c.h"
 #include "c_AHT20.h"
+#include "c_diode.h"
 
 static const char *TAG = "MAIN"; 
 
-
-static uint8_t data_rd[1024];
+#define GPIO_BLUE_DIODE GPIO_NUM_18
+#define GPIO_RED_DIODE GPIO_NUM_19
 
 void app_main(void)
 {
@@ -37,6 +38,14 @@ void app_main(void)
     );
 
     vTaskDelay(pdMS_TO_TICKS(60)); // wait after power-on
+
+    gpio_reset_pin(GPIO_BLUE_DIODE);
+    gpio_set_direction(GPIO_BLUE_DIODE, GPIO_MODE_OUTPUT);
+  
+    gpio_reset_pin(GPIO_RED_DIODE);
+    gpio_set_direction(GPIO_RED_DIODE, GPIO_MODE_OUTPUT);
+   
+    blink_diode(GPIO_BLUE_DIODE, 1500);
 
     uint8_t status_aht20 = 0;
     ESP_ERROR_CHECK(i2c_get_status_aht20(&dev_handle, &status_aht20));
