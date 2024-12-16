@@ -7,7 +7,7 @@
 #include <esp_log.h>
 
 #define GPIO_BLUE_DIODE GPIO_NUM_18
-#define GPIO_RED_DIODE GPIO_NUM_19
+#define GPIO_ORANGE_DIODE GPIO_NUM_19
 
 #define EVENT_TEM_TOO_WARM BIT0
 #define EVENT_TEM_NORMAL BIT1

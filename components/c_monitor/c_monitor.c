@@ -41,13 +41,15 @@ void init_monitor_system() {
 
 void light_indication_tem_task(void *pvParameters) {
     gpio_num_t active_diode = GPIO_BLUE_DIODE;
+    uint8_t diode_level = 0;
 
     while(true){
         if( is_tem_state_normal() ){
             ESP_LOGI(TAG, "temperature state is normal");
 
             gpio_set_level(GPIO_BLUE_DIODE, 0);
-            gpio_set_level(GPIO_RED_DIODE, 0);
+            gpio_set_level(GPIO_ORANGE_DIODE, 0);
+            diode_level = 0;
 
             EventBits_t bits = wait_deviation_tem_state(portMAX_DELAY);
             
@@ -57,10 +59,12 @@ void light_indication_tem_task(void *pvParameters) {
 
             }else if( (bits & EVENT_TEM_TOO_WARM) > 0 ) {
                 ESP_LOGI(TAG, "temperature state is too warm");
-                active_diode = GPIO_RED_DIODE;
+                active_diode = GPIO_ORANGE_DIODE;
             }
         }else{
-            toggle_diode(active_diode);
+            diode_level = diode_level ? 0 : 1;
+            gpio_set_level(active_diode, diode_level);
+
             vTaskDelay(TOGGLE_DIODE_DELAY_MS / portTICK_PERIOD_MS);
         }
     }
@@ -82,5 +86,5 @@ void set_tem_state(EventBits_t eventBit) {
 }
 
 void toggle_diode(gpio_num_t gpio_num) {
-    gpio_set_level( gpio_num, gpio_get_level(gpio_num) ? 0 : 1 );
+    gpio_set_level( gpio_num, (gpio_get_level(gpio_num) ? 0 : 1) );
 }
