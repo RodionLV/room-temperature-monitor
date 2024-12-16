@@ -66,6 +66,8 @@ void app_main(void)
             set_tem_state(EVENT_TEM_TOO_WARM);
         }else if(measurement.tempreture < 20) {
             set_tem_state(EVENT_TEM_TOO_COLD);
+        }else{
+            set_tem_state(EVENT_TEM_NORMAL);
         }
 
         vTaskDelay(DELAY_MESUREMENT_MS / portTICK_PERIOD_MS);

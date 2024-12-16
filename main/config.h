@@ -9,3 +9,4 @@
 // TODO: check CRC
 // TODO: mode night 16-22 and day 20-25
 // TODO: bluetooth interface
+// TODO: study analis task stack size

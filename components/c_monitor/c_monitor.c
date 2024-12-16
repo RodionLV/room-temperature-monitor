@@ -22,8 +22,8 @@ void init_monitor_system() {
     gpio_reset_pin(GPIO_BLUE_DIODE);
     gpio_set_direction(GPIO_BLUE_DIODE, GPIO_MODE_OUTPUT);
   
-    gpio_reset_pin(GPIO_RED_DIODE);
-    gpio_set_direction(GPIO_RED_DIODE, GPIO_MODE_OUTPUT);
+    gpio_reset_pin(GPIO_ORANGE_DIODE);
+    gpio_set_direction(GPIO_ORANGE_DIODE, GPIO_MODE_OUTPUT);
    
 
     static StaticTask_t xTaskBuffer;
@@ -42,6 +42,13 @@ void init_monitor_system() {
 void light_indication_tem_task(void *pvParameters) {
     gpio_num_t active_diode = GPIO_BLUE_DIODE;
     uint8_t diode_level = 0;
+
+    EventBits_t state = xEventGroupWaitBits(monitorEventGroup, (EVENT_TEM_TOO_COLD | EVENT_TEM_TOO_WARM | EVENT_TEM_NORMAL), pdFALSE, pdFALSE, portMAX_DELAY);
+    if(state == 0){
+        ESP_LOGE(TAG, "failed get state about measurement");
+        vTaskDelete(NULL);
+        return;
+    }
 
     while(true){
         if( is_tem_state_normal() ){
@@ -73,7 +80,7 @@ void light_indication_tem_task(void *pvParameters) {
 }
 
 bool is_tem_state_normal() {
-    return (xEventGroupGetBits(monitorEventGroup) & (EVENT_TEM_TOO_COLD | EVENT_TEM_TOO_WARM)) == 0;
+    return (xEventGroupGetBits(monitorEventGroup) & EVENT_TEM_NORMAL) != 0;
 }
 
 EventBits_t wait_deviation_tem_state(TickType_t xTicksToWait) {
