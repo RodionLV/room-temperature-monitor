@@ -9,12 +9,10 @@
 #include "config.h"
 #include "c_i2c.h"
 #include "c_AHT20.h"
-#include "c_diode.h"
+#include "c_monitor.h"
 
 static const char *TAG = "MAIN"; 
 
-#define GPIO_BLUE_DIODE GPIO_NUM_18
-#define GPIO_RED_DIODE GPIO_NUM_19
 
 void app_main(void)
 {
@@ -39,14 +37,6 @@ void app_main(void)
 
     vTaskDelay(pdMS_TO_TICKS(60)); // wait after power-on
 
-    gpio_reset_pin(GPIO_BLUE_DIODE);
-    gpio_set_direction(GPIO_BLUE_DIODE, GPIO_MODE_OUTPUT);
-  
-    gpio_reset_pin(GPIO_RED_DIODE);
-    gpio_set_direction(GPIO_RED_DIODE, GPIO_MODE_OUTPUT);
-   
-    blink_diode(GPIO_BLUE_DIODE, 1500);
-
     uint8_t status_aht20 = 0;
     ESP_ERROR_CHECK(i2c_get_status_aht20(&dev_handle, &status_aht20));
     ESP_LOGI(TAG, "status: %x", status_aht20);
@@ -54,7 +44,7 @@ void app_main(void)
     vTaskDelay(pdMS_TO_TICKS(20));
     
     if( !is_calibrated_aht20(status_aht20) ){
-        i2c_init_aht20(&dev_handle);
+        ESP_ERROR_CHECK(i2c_init_aht20(&dev_handle));
         ESP_LOGI(TAG, "aht20 is initialized");
         vTaskDelay(pdMS_TO_TICKS(40));
     }
@@ -64,11 +54,19 @@ void app_main(void)
         .tempreture = -1,
     };
 
+    init_monitor_system();
+
     while(true){
         ESP_LOGI(TAG, "Doing measurement...");
     
         i2c_get_measurement_aht20(&dev_handle, &measurement);
         ESP_LOGI(TAG, "humidity: %.2f%%\ttempreture: %.2fC", measurement.humidity, measurement.tempreture);
+
+        if(measurement.tempreture > 25) {
+            set_tem_state(EVENT_TEM_TOO_WARM);
+        }else if(measurement.tempreture < 20) {
+            set_tem_state(EVENT_TEM_TOO_COLD);
+        }
 
         vTaskDelay(DELAY_MESUREMENT_MS / portTICK_PERIOD_MS);
     }
