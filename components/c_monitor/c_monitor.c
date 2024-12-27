@@ -12,6 +12,7 @@ EventBits_t wait_deviation_tem_state(TickType_t xTicksToWait);
 
 void light_indication_tem_task(void *pvParameters);
 
+gpio_num_t get_diode_by_state(EventBits_t bits);
 void toggle_diode(gpio_num_t gpio_num);
 
 
@@ -43,12 +44,14 @@ void light_indication_tem_task(void *pvParameters) {
     gpio_num_t active_diode = GPIO_BLUE_DIODE;
     uint8_t diode_level = 0;
 
-    EventBits_t state = xEventGroupWaitBits(monitorEventGroup, (EVENT_TEM_TOO_COLD | EVENT_TEM_TOO_WARM | EVENT_TEM_NORMAL), pdFALSE, pdFALSE, portMAX_DELAY);
-    if(state == 0){
+    EventBits_t bits = xEventGroupWaitBits(monitorEventGroup, (EVENT_TEM_TOO_COLD | EVENT_TEM_TOO_WARM | EVENT_TEM_NORMAL), pdFALSE, pdFALSE, portMAX_DELAY);
+    if(bits == 0){
         ESP_LOGE(TAG, "failed get state about measurement");
         vTaskDelete(NULL);
         return;
     }
+
+    active_diode = get_diode_by_state(bits);
 
     while(true){
         if( is_tem_state_normal() ){
@@ -59,15 +62,7 @@ void light_indication_tem_task(void *pvParameters) {
             diode_level = 0;
 
             EventBits_t bits = wait_deviation_tem_state(portMAX_DELAY);
-            
-            if( (bits & EVENT_TEM_TOO_COLD) > 0 ) {
-                ESP_LOGI(TAG, "temperature state is too cold");
-                active_diode = GPIO_BLUE_DIODE;
-
-            }else if( (bits & EVENT_TEM_TOO_WARM) > 0 ) {
-                ESP_LOGI(TAG, "temperature state is too warm");
-                active_diode = GPIO_ORANGE_DIODE;
-            }
+            active_diode = get_diode_by_state(bits);
         }else{
             diode_level = diode_level ? 0 : 1;
             gpio_set_level(active_diode, diode_level);
@@ -90,6 +85,19 @@ EventBits_t wait_deviation_tem_state(TickType_t xTicksToWait) {
 void set_tem_state(EventBits_t eventBit) {
     xEventGroupClearBits(monitorEventGroup, (EVENT_TEM_TOO_WARM | EVENT_TEM_TOO_COLD | EVENT_TEM_NORMAL));
     xEventGroupSetBits(monitorEventGroup, eventBit);
+}
+
+gpio_num_t get_diode_by_state(EventBits_t bits) {
+    if( (bits & EVENT_TEM_TOO_COLD) > 0 ) {
+        ESP_LOGI(TAG, "temperature state is too cold");
+        return GPIO_BLUE_DIODE;
+
+    }else if( (bits & EVENT_TEM_TOO_WARM) > 0 ) {
+        ESP_LOGI(TAG, "temperature state is too warm");
+        return GPIO_ORANGE_DIODE;
+    }
+
+    return GPIO_BLUE_DIODE;
 }
 
 void toggle_diode(gpio_num_t gpio_num) {
