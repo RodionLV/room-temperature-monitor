@@ -5,6 +5,8 @@ static const char* TAG = "BT_INTERFACE";
 static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *param);
 static void gatts_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_if, esp_ble_gatts_cb_param_t *param);
 
+static uint16_t gatt_app_handles[HRS_IDX_NB];
+
 static const uint16_t primary_service_uuid = ESP_GATT_UUID_PRI_SERVICE;
 static const uint16_t character_declaration_uuid   = ESP_GATT_UUID_CHAR_DECLARE;
 
@@ -120,6 +122,25 @@ esp_err_t init_bt_interface(){
     return err;
 }
 
+void change_tempreture_val_char(uint8_t *val, size_t len) {
+    memcpy(tempreture_val, val, len);
+    esp_err_t err = esp_ble_gatts_set_attr_value(gatt_app_handles[INDEX_TEMPRETURE_VAL_CHAR], len, tempreture_val);
+    if(err){
+        ESP_LOGI(TAG, "set attr value is failed");
+        return;
+    }
+    // esp_ble_gatts_send_service_change_indication(profile_inst.gatts_if, profile_inst.conn_id);
+}
+
+void change_humidity_val_char(uint8_t *val, size_t len) {
+    memcpy(humidity_val, val, len);
+    esp_err_t err = esp_ble_gatts_set_attr_value(gatt_app_handles[INDEX_HUMIDITY_VAL_CHAR], len, humidity_val);
+    if(err){
+        ESP_LOGI(TAG, "set attr value is failed");
+        return;
+    }
+}
+
 static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *param) {
     ESP_LOGI(TAG, "gap event: %i", event);
     esp_err_t err;
@@ -147,7 +168,7 @@ static void gatts_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_
     switch(event){
         case ESP_GATTS_REG_EVT:
         ESP_LOGI(TAG, "gatts server registered, with status: %d and app_id: %d", param->reg.status, param->reg.app_id);
-        // profile_inst.gatts_if = gatts_if;
+        profile_inst.gatts_if = gatts_if;
         // profile_inst.service_id.is_primary = true;
         // profile_inst.service_id.id.inst_id = 0x00;
         // profile_inst.service_id.id.uuid.len = ESP_UUID_LEN_16;
@@ -164,7 +185,7 @@ static void gatts_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_
         //     ESP_LOGE(TAG, "gatts create service is failed");
         //     break;
         // }
-
+      
         err = esp_ble_gatts_create_attr_tab(gatt_db, gatts_if, HRS_IDX_NB, SERVICE_INST_ID);
         if (err){
             ESP_LOGE(TAG, "create attr table failed, error code = %x", err);
@@ -183,7 +204,7 @@ static void gatts_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_
         break;
         case ESP_GATTS_CREATE_EVT:
         ESP_LOGI(TAG, "Service create, status %d, service_handle %d", param->create.status, param->create.service_handle);
-        // profile_inst.service_handle = param->create.service_handle;
+        profile_inst.service_handle = param->create.service_handle;
         // profile_inst.char_uuid.len = ESP_UUID_LEN_16;
         // profile_inst.char_uuid.uuid.uuid16 = TEMPRETURE_CHAR_UUID;
     
@@ -250,8 +271,9 @@ static void gatts_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_
                     doesn't equal to HRS_IDX_NB(%d)", param->add_attr_tab.num_handle, HRS_IDX_NB);
         } else {
             ESP_LOGI(TAG, "create attribute table successfully, the number handle = %d",param->add_attr_tab.num_handle);
-            // memcpy(heart_rate_handle_table, param->add_attr_tab.handles, sizeof(heart_rate_handle_table));
-            esp_ble_gatts_start_service(param->add_attr_tab.handles[INDEX_SERVICE]);
+            memcpy(gatt_app_handles, param->add_attr_tab.handles, sizeof(gatt_app_handles));
+            esp_ble_gatts_start_service(gatt_app_handles[INDEX_SERVICE]);
+            // esp_ble_gatts_show_local_database();
         }
         break;
         case ESP_GATTS_SET_ATTR_VAL_EVT: 

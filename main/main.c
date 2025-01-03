@@ -77,6 +77,9 @@ void app_main(void)
     
         i2c_get_measurement_aht20(&dev_handle, &measurement);
         ESP_LOGI(TAG, "humidity: %.2f%%\ttempreture: %.2fC", measurement.humidity, measurement.tempreture);
+        
+        change_tempreture_val_char((uint8_t*)&measurement.tempreture, 4);
+        change_humidity_val_char((uint8_t*)&measurement.humidity, 4);
 
         if(measurement.tempreture > 26) {
             set_tem_state(EVENT_TEM_TOO_WARM);

@@ -89,6 +89,8 @@ enum {
 
 esp_err_t init_bt_interface();
 
+void change_tempreture_val_char(uint8_t *val, size_t len);
+void change_humidity_val_char(uint8_t *val, size_t len);
 // static esp_attr_value_t tempreture_char_attr = {
 //     .attr_max_len = 4,
 //     .attr_len     = sizeof(tempreture_val),
