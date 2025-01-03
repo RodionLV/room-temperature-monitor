@@ -6,21 +6,22 @@
 #include "esp_bt.h"
 #include "esp_bt_main.h"
 #include "esp_bt_device.h"
+#include "esp_bt_defs.h"
 
 #include "esp_gap_ble_api.h"
 
 #include "esp_gatts_api.h"
 #include "esp_gatt_common_api.h"
 
-#include "esp_bt_defs.h"
-
 #include "esp_log.h"
+
 
 #define GAP_DEVICE_NAME "esp32-room-indicators"
 
-#define INDICATORS_PROFILE_APP_ID 0
-#define GATTS_INDICATORS_SERVICE_UUID 0x1A00
-#define INDICATORS_HANDLE_NUM 4
+#define INDICATORS_PROFILE_APP_ID       0
+#define SERVICE_INST_ID                 0
+#define GATTS_INDICATORS_SERVICE_UUID   0x1A00
+// #define INDICATORS_HANDLE_NUM           4
 
 #define TEMPRETURE_CHAR_UUID 0x2810
 #define TEMPRETURE_DESCR_UUID 0x2811
@@ -72,12 +73,27 @@ static esp_ble_adv_params_t adv_params = {
 };
 
 static uint8_t tempreture_val[4] = {0,0,0,0};
+static uint8_t humidity_val[4] = {0,0,0,0};
 
-static esp_attr_value_t tempreture_char_attr = {
-    .attr_max_len = 4,
-    .attr_len     = sizeof(tempreture_val),
-    .attr_value   = tempreture_val,
+enum {
+    INDEX_SERVICE,
+
+    INDEX_TEMPRETURE_CHAR,
+    INDEX_TEMPRETURE_VAL_CHAR,
+
+    INDEX_HUMIDITY_CHAR,
+    INDEX_HUMIDITY_VAL_CHAR,
+
+    HRS_IDX_NB
 };
+
+esp_err_t init_bt_interface();
+
+// static esp_attr_value_t tempreture_char_attr = {
+//     .attr_max_len = 4,
+//     .attr_len     = sizeof(tempreture_val),
+//     .attr_value   = tempreture_val,
+// };
 
 // static uint8_t tempreture_descr[] = {'t', 'e', 'm', 'p', 'r', 'e', 't', 'u', 'r', 'e'};
 
@@ -86,7 +102,5 @@ static esp_attr_value_t tempreture_char_attr = {
 //     .attr_len     = sizeof(tempreture_descr),
 //     .attr_value   = tempreture_descr,
 // };
-
-esp_err_t init_bt_interface();
 
 #endif // INTERFACE_BLUETOOTH_H
